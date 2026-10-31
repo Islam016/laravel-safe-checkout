@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/Islam016/laravel-safe-checkout/actions/workflows/tests.yml/badge.svg)](https://github.com/Islam016/laravel-safe-checkout/actions/workflows/tests.yml)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
-![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012-FF2D20)
+![Laravel](https://img.shields.io/badge/Laravel-12%2B-FF2D20)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Payments for Laravel with **Moyasar** and **Tap** that are hard to get wrong.
@@ -135,7 +135,7 @@ Implement `IslamGaber\SafeCheckout\Contracts\Gateway` (`createCheckout`, `fetch`
 composer test
 ```
 
-Every flow above has a test with faked gateway responses: double clicks, forged and tampered webhooks, replayed deliveries, wrong amounts, stale responses, gateway outages and missed webhooks. CI runs on PHP 8.2–8.4 with Laravel 11 and 12, and on real MySQL 8.4 and PostgreSQL 17.
+Every flow above has a test with faked gateway responses: double clicks, forged and tampered webhooks, replayed deliveries, wrong amounts, stale responses, gateway outages and missed webhooks. CI runs on PHP 8.2–8.4 with SQLite, and on real MySQL 8.4 and PostgreSQL 17.
 
 ## Notes
 
