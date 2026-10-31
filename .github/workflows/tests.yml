@@ -1,0 +1,104 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  sqlite:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+        laravel: ['11', '12']
+
+    name: PHP ${{ matrix.php }} · Laravel ${{ matrix.laravel }} · SQLite
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          if [ "${{ matrix.laravel }}" = "11" ]; then TB=9; else TB=10; fi
+          composer require "illuminate/support:^${{ matrix.laravel }}.0" "orchestra/testbench:^${TB}.0" --dev --no-update --no-interaction
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          vendor/bin/phpunit --no-progress 2>&1 | tee phpunit.log || {
+            python3 -c "import sys;d=open('phpunit.log',encoding='utf-8',errors='replace').read()[-6000:];[print('::error title=phpunit::'+c.replace('%','%25').replace('\r','').replace('\n','%0A')) for c in [d[i:i+1800] for i in range(0,len(d),1800)]]"
+            exit 1
+          }
+
+  databases:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        db: ['mysql', 'pgsql']
+
+    name: PHP 8.3 · Laravel 12 · ${{ matrix.db }}
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_CONNECTION: ${{ matrix.db }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: ${{ matrix.db == 'mysql' && '3306' || '5432' }}
+      DB_DATABASE: testing
+      DB_USERNAME: ${{ matrix.db == 'mysql' && 'root' || 'postgres' }}
+      DB_PASSWORD: password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_pgsql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          vendor/bin/phpunit --no-progress 2>&1 | tee phpunit.log || {
+            python3 -c "import sys;d=open('phpunit.log',encoding='utf-8',errors='replace').read()[-6000:];[print('::error title=phpunit::'+c.replace('%','%25').replace('\r','').replace('\n','%0A')) for c in [d[i:i+1800] for i in range(0,len(d),1800)]]"
+            exit 1
+          }
